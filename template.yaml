@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Image Upload Service (Single API + Single Lambda)
+
+Globals:
+  Function:
+    Runtime: python3.9
+    Timeout: 15
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: Images
+        BUCKET_NAME: monty.cloud.images.upload
+
+Resources:
+
+  # ---------------------------
+  # DynamoDB Table
+  # ---------------------------
+  ImagesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Images
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: imageId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: imageId
+          KeyType: HASH
+
+  # ---------------------------
+  # S3 Bucket
+  # ---------------------------
+  ImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: monty.cloud.images.upload
+
+  # ---------------------------
+  # Single Lambda (CRUD Handler)
+  # ---------------------------
+  ImageApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: handlers/image_handler.handler
+      Description: Single Lambda handling all CRUD operations
+      Policies:
+        - S3CrudPolicy:
+            BucketName: monty.cloud.images.upload
+        - DynamoDBCrudPolicy:
+            TableName: Images
+
+      Events:
+
+        # ---- Explicit GET (FIXES pathParameters) ----
+        GetImage:
+          Type: Api
+          Properties:
+            Path: /images/{imageId}
+            Method: GET
+
+        # ---- Explicit DELETE (FIXES pathParameters) ----
+        DeleteImage:
+          Type: Api
+          Properties:
+            Path: /images/{imageId}
+            Method: DELETE
+
+        # ---- Proxy for all other routes ----
+        ApiProxy:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod

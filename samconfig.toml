@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "Image-Upload-Service"
+resolve_s3 = true
+s3_prefix = "Image-Upload-Service"
+region = "us-east-2"
+profile = "EezyCode"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+image_repositories = []
+
+[default.global.parameters]
+region = "us-east-2"
