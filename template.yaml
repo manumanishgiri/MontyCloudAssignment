@@ -25,9 +25,22 @@ Resources:
       AttributeDefinitions:
         - AttributeName: imageId
           AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
       KeySchema:
         - AttributeName: imageId
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserImagesIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
 
   # ---------------------------
   # S3 Bucket
@@ -53,6 +66,13 @@ Resources:
             TableName: Images
 
       Events:
+
+        # LIST IMAGES
+        ListImages:
+          Type: Api
+          Properties:
+            Path: /images
+            Method: GET
 
         # ---- Explicit GET (FIXES pathParameters) ----
         GetImage:

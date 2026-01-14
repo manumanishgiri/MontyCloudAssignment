@@ -19,9 +19,22 @@ Resources:
       AttributeDefinitions:
       - AttributeName: imageId
         AttributeType: S
+      - AttributeName: userId
+        AttributeType: S
+      - AttributeName: createdAt
+        AttributeType: S
       KeySchema:
       - AttributeName: imageId
         KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: UserImagesIndex
+        KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: createdAt
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
   ImagesBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -38,6 +51,11 @@ Resources:
       - DynamoDBCrudPolicy:
           TableName: Images
       Events:
+        ListImages:
+          Type: Api
+          Properties:
+            Path: /images
+            Method: GET
         GetImage:
           Type: Api
           Properties:

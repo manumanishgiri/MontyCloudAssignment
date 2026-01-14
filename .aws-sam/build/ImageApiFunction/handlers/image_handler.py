@@ -37,25 +37,26 @@ def json_body(event):
 def handler(event, context):
     method = event.get("httpMethod")
     path = event.get("path", "")
+    query = event.get("queryStringParameters") or {}
     params = event.get("pathParameters") or {}
 
-    # POST /images/upload-url
+    # ✅ /images/upload-url
     if method == "POST" and path == "/images/upload-url":
         return get_upload_url(event)
 
-    # POST /images/metadata
+    # ✅ /images/metadata
     if method == "POST" and path == "/images/metadata":
         return save_metadata(event)
 
-    # GET /images?userId=
+    # ✅ LIST IMAGES
     if method == "GET" and path == "/images":
-        return list_images(event)
+        return list_images(query)
 
-    # GET /images/{imageId}
+    # ✅ GET SINGLE IMAGE
     if method == "GET" and "imageId" in params:
         return get_image(event, params["imageId"])
 
-    # DELETE /images/{imageId}
+    # DELETE IMAGE
     if method == "DELETE" and "imageId" in params:
         return delete_image(event, params["imageId"])
 
@@ -133,18 +134,26 @@ def save_metadata(event):
     })
 
 # 3️⃣ List images by user
-def list_images(event):
-    params = event.get("queryStringParameters") or {}
-    user_id = params.get("userId")
+def list_images(query):
+    # Search by imageId
+    if "imageId" in query:
+        result = table.get_item(Key={"imageId": query["imageId"]})
+        item = result.get("Item")
+        if not item:
+            return response(404, {"message": "Image not found"})
+        return response(200, [item])
 
-    if not user_id:
-        return response(400, {"error": "userId is required"})
+    # Search by userId
+    if "userId" in query:
+        result = table.query(
+            IndexName="UserImagesIndex",
+            KeyConditionExpression=Key("userId").eq(query["userId"])
+        )
+        return response(200, result.get("Items", []))
 
-    result = table.scan(
-        FilterExpression=Key("userId").eq(user_id)
-    )
-
-    return response(200, result.get("Items", []))
+    return response(400, {
+        "error": "At least one query parameter (imageId or userId) is required"
+    })
 
 # 4️⃣ Get image (download URL)
 def get_image(event, image_id):
