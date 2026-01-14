@@ -130,3 +130,11 @@ sam deploy --guided
 ## Cleanup
 
 sam delete
+
+## Postman Collection
+
+[text](https://api.postman.com/collections/29117-419723ec-905f-43ca-a3e1-6352a61a74dd?access_key=PMAT-01KEYS7CJS353WPMP8J6T0VBKV)
+
+###
+
+APITT --> <https://9uki0bms76.execute-api.us-east-2.amazonaws.com/Prod>
